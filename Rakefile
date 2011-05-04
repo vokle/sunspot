@@ -1,22 +1,18 @@
-desc 'Release Sunspot and Sunspot::Rails to Gemcutter'
-task :release do
-  FileUtils.cp('README.rdoc', 'sunspot/')
+require 'rake'
+require 'rake/rdoctask'
 
-  require File.expand_path('../sunspot/lib/sunspot/version', __FILE__)
-
-  version_tag = "v#{Sunspot::VERSION}"
-  system "git tag -am 'Release version #{Sunspot::VERSION}' '#{version_tag}'"
-  system "git push origin #{version_tag}:#{version_tag}"
-
-  FileUtils.cd 'sunspot' do
-    system "gem build sunspot.gemspec"
-    system "gem push sunspot-#{Sunspot::VERSION}.gem"
-    FileUtils.rm "sunspot-#{Sunspot::VERSION}.gem"
-  end
-
-  FileUtils.cd 'sunspot_rails' do
-    system "gem build sunspot_rails.gemspec"
-    system "gem push sunspot_rails-#{Sunspot::VERSION}.gem"
-    FileUtils.rm("sunspot_rails-#{Sunspot::VERSION}.gem")
-  end
+if File.exist?(sunspot_lib = File.expand_path(File.join(File.dirname(__FILE__), '..', 'sunspot', 'lib')))
+  STDERR.puts("Using sunspot lib at #{sunspot_lib}")
+  $: << sunspot_lib
 end
+
+task :environment do
+  if ENV['SUNSPOT_LIB']
+    $: << ENV['SUNSPOT_LIB']
+  end
+  ENV['RAILS_ROOT'] ||= File.join(File.dirname(__FILE__), 'spec', 'rails3')
+  ENV['RAILS_ENV'] ||= 'test'
+  require File.expand_path(File.join(ENV['RAILS_ROOT'], 'config', 'environment.rb'))
+end
+
+FileList['dev_tasks/*.rake', 'lib/sunspot/rails/tasks.rb'].each { |file| load(file) }
